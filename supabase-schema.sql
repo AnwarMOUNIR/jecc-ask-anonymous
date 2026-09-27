@@ -1,15 +1,21 @@
--- Run this SQL in your Supabase SQL Editor if using Supabase:
+-- SQL Schema update for questions table:
 
 CREATE TABLE IF NOT EXISTS questions (
   id TEXT PRIMARY KEY,
   question TEXT NOT NULL,
   category TEXT DEFAULT 'General',
+  author_name TEXT,
+  author_email TEXT NOT NULL,
   answer TEXT,
   answered_by TEXT,
   answered_at TIMESTAMPTZ,
   status TEXT DEFAULT 'pending',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- If table already exists, alter to add columns:
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS author_name TEXT;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS author_email TEXT;
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
@@ -18,7 +24,7 @@ ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read questions" ON questions
   FOR SELECT USING (true);
 
--- Allow public anonymous insert
+-- Allow public insert
 CREATE POLICY "Public insert questions" ON questions
   FOR INSERT WITH CHECK (true);
 

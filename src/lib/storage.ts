@@ -22,6 +22,8 @@ if (!global.__memoryQuestions) {
       id: 'demo-1',
       question: 'What are the main events organized by JECC this academic year?',
       category: 'Events',
+      author_name: 'Karim',
+      author_email: 'student.karim@centrale-casablanca.ma',
       answer: 'JECC organizes several flagship events throughout the year, including engineering challenges, enterprise forums, workshops, and student networking seminars!',
       answered_by: 'JECC Core Team',
       answered_at: new Date(Date.now() - 3600000 * 24).toISOString(),
@@ -32,6 +34,8 @@ if (!global.__memoryQuestions) {
       id: 'demo-2',
       question: 'How can first-year students apply to become junior consultants or active members?',
       category: 'Recruitment',
+      author_name: 'Salma',
+      author_email: 'salma.ecc@gmail.com',
       answer: 'Recruitment campaigns open at the start of each semester with an information session followed by interviews. Keep an eye on our social channels!',
       answered_by: 'HR Division',
       answered_at: new Date(Date.now() - 3600000 * 12).toISOString(),
@@ -40,8 +44,10 @@ if (!global.__memoryQuestions) {
     },
     {
       id: 'demo-3',
-      question: 'Are questions truly 100% anonymous on this portal?',
-      category: 'General',
+      question: 'Will there be certificates provided after attending the Consulting masterclasses?',
+      category: 'Workshops',
+      author_name: 'Mehdi',
+      author_email: 'mehdi.consulting@gmail.com',
       answer: null,
       answered_by: null,
       answered_at: null,
@@ -72,11 +78,40 @@ export async function getQuestions(): Promise<Question[]> {
   );
 }
 
-export async function createQuestion(questionText: string, category: string = 'General'): Promise<Question> {
+export async function getQuestionById(id: string): Promise<Question | null> {
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase
+      .from('questions')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (!error && data) {
+      return data as Question;
+    }
+  }
+
+  const found = (global.__memoryQuestions || []).find((q) => q.id === id);
+  return found || null;
+}
+
+export async function createQuestion({
+  questionText,
+  category = 'General',
+  authorName = '',
+  authorEmail,
+}: {
+  questionText: string;
+  category?: string;
+  authorName?: string;
+  authorEmail: string;
+}): Promise<Question> {
   const newQuestion: Question = {
     id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `q-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     question: questionText.trim(),
     category: category.trim() || 'General',
+    author_name: authorName.trim(),
+    author_email: authorEmail.trim().toLowerCase(),
     answer: null,
     answered_by: null,
     answered_at: null,

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "JECC Anonymous Q&A Portal",
-  description: "Ask questions anonymously to the Junior Entreprise Centrale Casablanca team.",
+  title: "JECC Student Q&A Portal",
+  description: "Ask questions to the Junior Entreprise Centrale Casablanca team and receive official email responses.",
 };
 
 export default function RootLayout({

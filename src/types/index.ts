@@ -2,6 +2,8 @@ export interface Question {
   id: string;
   question: string;
   category?: string;
+  author_name?: string;
+  author_email: string;
   answer?: string | null;
   answered_by?: string | null;
   answered_at?: string | null;

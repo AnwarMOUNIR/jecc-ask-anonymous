@@ -16,7 +16,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { question, category } = body;
+    const { question, category, author_name, author_email } = body;
 
     if (!question || typeof question !== 'string' || question.trim().length < 5) {
       return NextResponse.json(
@@ -32,7 +32,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const created = await createQuestion(question, category || 'General');
+    if (!author_email || typeof author_email !== 'string' || !author_email.includes('@')) {
+      return NextResponse.json(
+        { success: false, error: 'A valid email address is required so we can notify you when answered.' },
+        { status: 400 }
+      );
+    }
+
+    const created = await createQuestion({
+      questionText: question,
+      category: category || 'General',
+      authorName: author_name || '',
+      authorEmail: author_email,
+    });
+
     return NextResponse.json({ success: true, data: created }, { status: 201 });
   } catch (error) {
     return NextResponse.json(

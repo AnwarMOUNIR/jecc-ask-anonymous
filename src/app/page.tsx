@@ -15,8 +15,10 @@ import {
   RefreshCw,
   Search,
   Users,
-  Sparkles,
-  ChevronRight
+  ChevronRight,
+  Mail,
+  User,
+  Info
 } from 'lucide-react';
 
 const CATEGORIES = ['All', 'Events', 'Recruitment', 'Workshops', 'Consulting', 'General'];
@@ -26,8 +28,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'public' | 'admin'>('public');
 
-  // Anonymous Ask form state
+  // Question form state (Non-anonymous, requires email)
   const [newQuestion, setNewQuestion] = useState('');
+  const [authorName, setAuthorName] = useState('');
+  const [authorEmail, setAuthorEmail] = useState('');
   const [category, setCategory] = useState('General');
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -117,7 +121,7 @@ export default function Home() {
 
   async function handleQuestionSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!newQuestion.trim()) return;
+    if (!newQuestion.trim() || !authorEmail.trim()) return;
 
     setSubmitting(true);
     setSubmitError('');
@@ -127,12 +131,19 @@ export default function Home() {
       const res = await fetch('/api/questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: newQuestion, category }),
+        body: JSON.stringify({
+          question: newQuestion,
+          category,
+          author_name: authorName,
+          author_email: authorEmail,
+        }),
       });
       const data = await res.json();
       if (data.success) {
         setSubmitSuccess(true);
         setNewQuestion('');
+        setAuthorName('');
+        setAuthorEmail('');
         fetchQuestions();
         setTimeout(() => setSubmitSuccess(false), 5000);
       } else {
@@ -191,6 +202,7 @@ export default function Home() {
     const matchesCategory = filterCategory === 'All' || q.category === filterCategory;
     const matchesSearch =
       q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (q.author_name && q.author_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (q.answer && q.answer.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
@@ -209,7 +221,7 @@ export default function Home() {
             </div>
             <div>
               <div className="font-bold tracking-tight text-white flex items-center gap-2">
-                <span>JECC Anonymous Q&A</span>
+                <span>JECC Student Q&A</span>
                 <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                   Portal
                 </span>
@@ -227,7 +239,7 @@ export default function Home() {
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
-              Public Q&A
+              Questions & Answers
             </button>
 
             <button
@@ -257,22 +269,29 @@ export default function Home() {
               <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden backdrop-blur-sm">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
 
-                <div className="flex items-center space-x-2 text-indigo-400 mb-2">
-                  <Sparkles className="w-5 h-5" />
-                  <span className="text-xs font-semibold uppercase tracking-wider">Ask Anything</span>
+                {/* Clear Notice: Not Anonymous - Email Notification */}
+                <div className="mb-4 p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-200 text-xs flex items-start gap-2.5">
+                  <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-amber-300">Notice: Verified Submissions</span>
+                    <p className="text-[11px] text-amber-300/80 mt-0.5 leading-relaxed">
+                      Questions are <strong className="text-white">not anonymous</strong>. We require your email address so our system can automatically send you the official response as soon as a JECC member answers!
+                    </p>
+                  </div>
                 </div>
-                <h2 className="text-xl font-bold text-white mb-1">Send an Anonymous Question</h2>
-                <p className="text-sm text-slate-400 mb-6">
-                  No email, no name, 100% private. The JECC executive board will answer your inquiry publicly below.
+
+                <h2 className="text-xl font-bold text-white mb-1">Submit Your Question</h2>
+                <p className="text-sm text-slate-400 mb-5">
+                  Ask our executive board anything about our club, events, recruitment, or consulting missions.
                 </p>
 
                 {submitSuccess && (
                   <div className="mb-5 p-4 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-sm flex items-start gap-3 animate-fade-in">
                     <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-semibold">Question submitted successfully!</p>
+                      <p className="font-semibold">Question submitted!</p>
                       <p className="text-xs text-emerald-400/80 mt-0.5">
-                        It has been submitted to the JECC club dashboard and will be answered shortly.
+                        We will notify you by email as soon as an executive member posts an answer.
                       </p>
                     </div>
                   </div>
@@ -287,7 +306,40 @@ export default function Home() {
                 <form onSubmit={handleQuestionSubmit} className="space-y-4">
                   <div>
                     <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                      Select Topic Category
+                      Your Email (for response notification) <span className="text-rose-400">*</span>
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="email"
+                        required
+                        value={authorEmail}
+                        onChange={(e) => setAuthorEmail(e.target.value)}
+                        placeholder="e.g. yourname@example.com"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                      Your Full Name
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={authorName}
+                        onChange={(e) => setAuthorName(e.target.value)}
+                        placeholder="e.g. Karim Bennani"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                      Topic Category
                     </label>
                     <select
                       value={category}
@@ -304,37 +356,37 @@ export default function Home() {
 
                   <div>
                     <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                      Your Question
+                      Your Question <span className="text-rose-400">*</span>
                     </label>
                     <textarea
                       rows={4}
                       value={newQuestion}
                       onChange={(e) => setNewQuestion(e.target.value)}
-                      placeholder="e.g. When do the candidate interviews for the commercial team take place?"
+                      placeholder="e.g. When do candidate interviews for the commercial team take place?"
                       maxLength={500}
                       required
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"
                     />
                     <div className="flex justify-between items-center mt-1 text-[11px] text-slate-500">
-                      <span>Anonymous submission</span>
+                      <span>An email notification will be dispatched when answered</span>
                       <span>{newQuestion.length}/500</span>
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    disabled={submitting || !newQuestion.trim()}
+                    disabled={submitting || !newQuestion.trim() || !authorEmail.trim()}
                     className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 text-white font-medium text-sm transition shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {submitting ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Sending anonymously...</span>
+                        <span>Submitting question...</span>
                       </>
                     ) : (
                       <>
                         <Send className="w-4 h-4" />
-                        <span>Submit Anonymous Question</span>
+                        <span>Submit Question</span>
                       </>
                     )}
                   </button>
@@ -416,7 +468,7 @@ export default function Home() {
                   <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
                     {searchQuery
                       ? 'No questions match your search filter. Try clearing your search.'
-                      : 'Be the first to ask an anonymous question using the box on the left!'}
+                      : 'Be the first to submit a question using the form on the left!'}
                   </p>
                 </div>
               ) : (
@@ -428,9 +480,16 @@ export default function Home() {
                       className="bg-slate-900/70 border border-slate-800/90 rounded-2xl p-5 hover:border-slate-700/80 transition-all shadow-md group"
                     >
                       <div className="flex items-center justify-between gap-2 mb-2.5">
-                        <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-slate-800 text-indigo-300 border border-slate-700/60">
-                          {q.category || 'General'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-slate-800 text-indigo-300 border border-slate-700/60">
+                            {q.category || 'General'}
+                          </span>
+                          {q.author_name && (
+                            <span className="text-xs text-slate-400 font-medium">
+                              Asked by {q.author_name}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
                           <Clock className="w-3 h-3" />
                           <span>{new Date(q.created_at).toLocaleDateString()}</span>
@@ -468,9 +527,16 @@ export default function Home() {
                       className="bg-slate-900/40 border border-slate-800/60 rounded-2xl p-5 opacity-80"
                     >
                       <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-slate-800/80 text-amber-300/80 border border-amber-500/20">
-                          {q.category || 'General'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-slate-800/80 text-amber-300/80 border border-amber-500/20">
+                            {q.category || 'General'}
+                          </span>
+                          {q.author_name && (
+                            <span className="text-xs text-slate-400">
+                              Asked by {q.author_name}
+                            </span>
+                          )}
+                        </div>
                         <span className="text-[10px] uppercase font-semibold tracking-wider text-amber-400/80 flex items-center gap-1">
                           <Clock className="w-3 h-3" /> Awaiting Answer
                         </span>
@@ -495,7 +561,7 @@ export default function Home() {
                   Club Member Access
                 </h2>
                 <p className="text-xs text-slate-400 text-center mb-6">
-                  Enter the club administrative password to reply to submitted questions and manage the board.
+                  Enter the club administrative password to reply to submitted questions. Replies will automatically trigger email notifications to the student.
                 </p>
 
                 {authError && (
@@ -548,7 +614,7 @@ export default function Home() {
                       <h2 className="text-lg font-bold text-white">Club Moderation Panel</h2>
                     </div>
                     <p className="text-xs text-slate-400 mt-1">
-                      Manage incoming anonymous inquiries and publish official answers for students.
+                      Manage incoming inquiries. Answering any question will automatically email the response directly to the student via Gmail SMTP.
                     </p>
                   </div>
 
@@ -599,8 +665,11 @@ export default function Home() {
                                 <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-800 text-indigo-300 border border-slate-700/60">
                                   {q.category || 'General'}
                                 </span>
+                                <span className="text-xs text-slate-300 font-medium">
+                                  {q.author_name ? `${q.author_name} (${q.author_email})` : q.author_email}
+                                </span>
                                 <span className="text-xs text-slate-500">
-                                  {new Date(q.created_at).toLocaleString()}
+                                  • {new Date(q.created_at).toLocaleString()}
                                 </span>
                               </div>
                               <h4 className="text-base font-medium text-white">{q.question}</h4>
@@ -629,7 +698,7 @@ export default function Home() {
                                 rows={3}
                                 value={answerDraft}
                                 onChange={(e) => setAnswerDraft(e.target.value)}
-                                placeholder="Type official response here..."
+                                placeholder={`Type official response here (an automated email will be sent to ${q.author_email})...`}
                                 className="w-full bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
                               />
                               <div className="flex justify-end gap-2">
@@ -652,12 +721,12 @@ export default function Home() {
                                   {submittingAnswer ? (
                                     <>
                                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                                      <span>Publishing...</span>
+                                      <span>Publishing & Sending Email...</span>
                                     </>
                                   ) : (
                                     <>
-                                      <Send className="w-3.5 h-3.5" />
-                                      <span>Publish Answer</span>
+                                      <Mail className="w-3.5 h-3.5" />
+                                      <span>Publish Answer & Send Email</span>
                                     </>
                                   )}
                                 </button>
@@ -672,7 +741,7 @@ export default function Home() {
                               className="px-3.5 py-1.5 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/30 text-amber-300 text-xs font-medium flex items-center gap-1.5 transition"
                             >
                               <MessageSquare className="w-3.5 h-3.5" />
-                              <span>Answer this question</span>
+                              <span>Answer & Email Response</span>
                             </button>
                           )}
                         </div>
@@ -702,8 +771,11 @@ export default function Home() {
                               <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-800 text-indigo-300">
                                 {q.category || 'General'}
                               </span>
+                              <span className="text-xs text-slate-300 font-medium">
+                                {q.author_name ? `${q.author_name} (${q.author_email})` : q.author_email}
+                              </span>
                               <span className="text-xs text-slate-500">
-                                Asked {new Date(q.created_at).toLocaleDateString()}
+                                • Asked {new Date(q.created_at).toLocaleDateString()}
                               </span>
                             </div>
                             <h4 className="text-sm font-medium text-white">{q.question}</h4>
@@ -763,7 +835,7 @@ export default function Home() {
                                 onClick={() => handleAnswerSubmit(q.id)}
                                 className="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-medium text-xs flex items-center gap-1.5 disabled:opacity-50"
                               >
-                                Update Answer
+                                Update & Resend Email
                               </button>
                             </div>
                           </div>
@@ -787,7 +859,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-slate-800/80 bg-slate-900/40 py-6 text-center text-xs text-slate-500">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p>© {new Date().getFullYear()} Junior Entreprise Centrale Casablanca. All questions are encrypted & anonymous.</p>
+          <p>© {new Date().getFullYear()} Junior Entreprise Centrale Casablanca. Official Student Q&A & Inquiries.</p>
           <div className="flex items-center gap-4 text-slate-400">
             <span>Powered by Next.js & Vercel</span>
           </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { answerQuestion, deleteQuestion } from '@/lib/storage';
+import { answerQuestion, deleteQuestion, getQuestionById } from '@/lib/storage';
 import { verifyAdminSession } from '@/lib/auth';
+import { sendAnswerNotificationEmail } from '@/lib/mailer';
 
 export async function PATCH(
   request: Request,
@@ -20,9 +21,27 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: 'Answer cannot be empty' }, { status: 400 });
     }
 
-    const updated = await answerQuestion(id, answer, answered_by || 'JECC Team');
+    // Retrieve previous question details to get author_email
+    const existing = await getQuestionById(id);
+
+    const responder = answered_by || 'JECC Team';
+    const updated = await answerQuestion(id, answer, responder);
     if (!updated) {
       return NextResponse.json({ success: false, error: 'Question not found' }, { status: 404 });
+    }
+
+    // Trigger email notification asynchronously if the question has an author email
+    const targetEmail = updated.author_email || existing?.author_email;
+    if (targetEmail) {
+      sendAnswerNotificationEmail({
+        recipientEmail: targetEmail,
+        recipientName: updated.author_name || existing?.author_name,
+        questionText: updated.question,
+        answerText: answer,
+        answeredBy: responder,
+      }).catch((err) => {
+        console.error('Failed to send answer notification email in background:', err);
+      });
     }
 
     return NextResponse.json({ success: true, data: updated });
