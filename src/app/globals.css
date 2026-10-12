@@ -1,26 +1,78 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Centrale Tech Official Brand Design Tokens */
+  --ct-teal: #009881;
+  --ct-teal-jade: #048471;
+  --ct-petrol: #0c3d40;
+  --ct-cover-teal: #63a09e;
+  --ct-green-ecc: #126a38;
+  --ct-dark-pine: #142e24;
+  --ct-pine-muted: #174330;
+  --ct-web-petrol: #073f49;
+
+  /* Editorial Neutrals */
+  --ct-slate-navy: #4c5362;
+  --ct-slate-header: #435966;
+  --ct-ecc-cobalt: #004f80;
+  --ct-ecc-navy: #10367d;
+  --ct-charcoal: #272727;
+  --ct-charcoal-soft: #3b3939;
+
+  /* Infographic & Accents */
+  --ct-blob-sky-blue: #abd1f9;
+  --ct-blob-chartreuse: #d5da0d;
+  --ct-blob-lemon: #f5faa8;
+  --ct-blob-amber: #c28b49;
+
+  /* Tier Fills */
+  --ct-tier-platine-bg: #e9f3fe;
+  --ct-tier-or-bg: #fff4c3;
+  --ct-tier-argent-bg: #eeeeee;
+  --ct-tier-bronze-bg: #eecabc;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Font Classes mapping to Centrale Tech Typography Hierarchy */
+.font-display {
+  font-family: 'Anton', Impact, 'Arial Narrow', sans-serif;
+  letter-spacing: 0.02em;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.font-cover {
+  font-family: 'Montserrat', sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.font-label {
+  font-family: 'Outfit', 'Montserrat', sans-serif;
+}
+
+.font-body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.font-card {
+  font-family: 'Poppins', 'Century Gothic', sans-serif;
+}
+
+/* Centrale Tech Running Header Hairline Rule */
+.ct-hairline {
+  height: 1px;
+  background-color: #435966;
+  opacity: 0.8;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #081d22;
+}
+::-webkit-scrollbar-thumb {
+  background: #009881;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #048471;
 }

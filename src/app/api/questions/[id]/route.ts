@@ -36,7 +36,7 @@ export async function PATCH(
       sendAnswerNotificationEmail({
         recipientEmail: targetEmail,
         recipientName: updated.author_name || existing?.author_name,
-        questionText: updated.question,
+        questionText: updated.description || updated.title,
         answerText: answer,
         answeredBy: responder,
       }).catch((err) => {

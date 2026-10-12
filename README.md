@@ -1,64 +1,88 @@
-# JECC Anonymous Q&A Portal
+# 🧺 Centrale Tech — Hub des Anomalies & Pannes laundry.fecc.ma
 
-A modern, responsive platform built with Next.js (App Router) and Tailwind CSS designed for students and community members to ask questions anonymously, and for **Junior Entreprise Centrale Casablanca (JECC)** club members to publish official answers through a password-protected admin dashboard.
-
----
-
-## 🚀 Live Vercel Deployment
-
-Deploy this project on Vercel with one click:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FAnwarMOUNIR%2Fjecc-ask-anonymous)
-
-### Environment Variables on Vercel:
-
-| Variable | Description | Default / Example |
-| :--- | :--- | :--- |
-| `ADMIN_PASSWORD` | Password required to unlock the club members' panel | `clubSecretPass2026` |
-| `NEXT_PUBLIC_SUPABASE_URL` | *(Optional)* Supabase project URL for cloud persistence | `https://xyz.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | *(Optional)* Supabase public anon key | `ey...` |
-| `SUPABASE_SERVICE_ROLE_KEY` | *(Optional)* Supabase service role key (for server mutations) | `ey...` |
-
-> **Note**: The application has an automatic in-memory fallback enabled out of the box, allowing you to deploy and test immediately on Vercel even before connecting a Supabase database!
+Plateforme officielle de remontée, suivi et résolution des pannes et anomalies du service de laverie (**laundry.fecc.ma**) de l'**École Centrale Casablanca**, développée et opérée par le club technologique **Centrale Tech**.
 
 ---
 
-## ✨ Features
-
-### 1. Public Anonymous Portal
-- **Zero Login / Zero Tracking**: Anyone can submit questions anonymously with a topic category.
-- **Search & Category Filtering**: Filter by topics (*General, Events, Recruitment, Workshops, Consulting*) or search keywords.
-- **Answer Display**: Real-time display of questions answered by JECC executive members.
-
-### 2. Password-Protected Club Admin Panel
-- Access via the **"Club Admin"** button in the top navigation bar.
-- Password gate authenticated via HTTP-only secure session cookies.
-- **Answer Pending Questions**: Reply to student inquiries and choose your responder title (e.g. *JECC Core Team*, *HR Division*).
-- **Edit & Moderate**: Update previous answers or delete spam/inappropriate questions.
-
----
-
-## 🗄️ Database Setup (Supabase)
-
-If you wish to use Supabase for persistent cloud storage:
-1. Create a free project at [supabase.com](https://supabase.com).
-2. Go to the **SQL Editor** in your Supabase dashboard and run the contents of [`supabase-schema.sql`](supabase-schema.sql).
-3. Copy your project URL and API keys to your Vercel Environment Variables or `.env.local`.
+## 🎨 Identité Visuelle Centrale Tech
+Cette application respecte rigoureusement la charte graphique et le design system de **Centrale Tech** :
+- **Couleurs officielles** :
+  - Deep Petrol : `#0c3d40`
+  - Primary Accent Teal : `#009881`
+  - Jade Emphasis Teal : `#048471`
+  - Institutional ECC Green : `#126a38`
+  - Slate Header / Divider : `#435966`
+  - Soft Sky Blue : `#abd1f9`
+- **Typographies** :
+  - Titres Display : `Anton`
+  - Titres Cover : `Montserrat`
+  - Labels & Navigation : `Outfit`
+  - Corps de texte : `Inter` / `Poppins`
+- **Motifs emblématiques** :
+  - Running Header avec filets hairlines horizontaux `#435966`
+  - Coins accentués carré teal `#009881`
+  - Badges d'urgence et statuts normalisés
 
 ---
 
-## 💻 Local Development
+## 🚀 Fonctionnalités Clés
 
-```bash
-# Clone the repository
-git clone https://github.com/AnwarMOUNIR/jecc-ask-anonymous.git
-cd jecc-ask-anonymous
+### 1. Formulaire Complet de Signalement
+- **Titre & Catégorisation** :
+  - Panne Machine / Lavage Interrompu
+  - Réservation & Créneau Bloqué
+  - Jetons & Paiement / Solde Déduit
+  - Interface Web & Affichage Mobile
+  - Connexion CAS & Session Expirée
+  - Alerte Fin de Cycle / SMS Manquant
+  - Propreté / Infrastructure du Lavoir
+- **Localisation & Machine** : Choix du lavoir (Résidence A, B) et du numéro de machine.
+- **Urgence / Sévérité** : Faible, Moyenne, Élevée, Critique.
+- **Détection & Sélection de Plateforme** (Android, iPhone, iPad, Mac, Windows, Linux, navigateur Safari/Chrome/Firefox/Edge/Webview, et bouton de détection automatique en 1 clic).
+- **Captures d'écran (Optionnelles)** : Téléversement direct d'images (PNG, JPG, WebP) vers le bucket Supabase Storage avec prévisualisation et lightbox.
+- **Réplication Vidéo (Optionnelle)** : Téléversement de fichiers vidéo (.mp4, .webm) ou lien externe (Loom, Google Drive).
+- **Notification par Email** : E-mail automatique expédié au déclarant dès mise à jour par Centrale Tech.
 
-# Install dependencies
-npm install
+### 2. Flux Public des Signalements & Résolutions
+- Moteur de recherche instantané par machine, titre, ou étudiant.
+- Filtres combinés par catégorie, statut et plateforme.
+- Visualisation détaillée avec lecteur vidéo et galerie photo.
+- Affichage des réponses officielles du Pôle Technique Centrale Tech.
 
-# Start local server
-npm run dev
+### 3. Espace Membre Pôle Technique (Admin)
+- Protégé par mot de passe administrateur (`ADMIN_PASSWORD`).
+- Gestion en direct : passage de statut (`open` → `investigating` → `resolved` → `closed`).
+- Rédaction de la note d'intervention avec expédition instantanée d'un e-mail officiel à l'étudiant via Gmail SMTP.
+
+---
+
+## 🗄️ Base de Données & Supabase
+
+1. Créez un projet sur [Supabase](https://supabase.com).
+2. Exécutez le script SQL présent dans [`supabase-schema.sql`](supabase-schema.sql) dans l'éditeur SQL de votre projet.
+3. Le bucket de stockage `issue-attachments` est prêt pour recevoir les captures et vidéos jusqu'à 50 Mo.
+4. Renseignez vos clés dans `.env.local` :
+
+```env
+SUPABASE_URL=https://votre-projet.supabase.co
+SUPABASE_SECRET_KEY=sb_secret_...
+ADMIN_PASSWORD=clubSecretPass2026
+GMAIL_SENDER_EMAIL=contact@example.com
+GMAIL_APP_PASSWORD=votre_mot_de_passe_d_application
 ```
 
-Visit [http://localhost:3000](http://localhost:3000) to view the portal.
+---
+
+## 💻 Développement Local
+
+```bash
+# Installation des dépendances
+npm install
+
+# Lancement du serveur de développement
+npm run dev
+
+# Build de production
+npm run build
+```
+Accédez au portail sur `http://localhost:3000`.

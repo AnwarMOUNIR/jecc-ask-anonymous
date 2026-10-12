@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { LaundryIssue } from '@/types';
 
 const host = process.env.SMTP__HOST || 'smtp.gmail.com';
 const port = parseInt(process.env.SMTP__PORT || '587', 10);
@@ -16,6 +17,194 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+export async function sendIssueStatusUpdateEmail({
+  issue,
+  adminNotes,
+  responderName,
+}: {
+  issue: LaundryIssue;
+  adminNotes?: string | null;
+  responderName?: string | null;
+}) {
+  if (!issue.author_email || !issue.author_email.includes('@')) {
+    console.warn('Invalid or missing recipient email for notification:', issue.author_email);
+    return { success: false, reason: 'Invalid email' };
+  }
+
+  const displayName = issue.author_name?.trim() ? issue.author_name.trim() : 'Étudiant(e) Centrale Casablanca';
+  const responder = responderName?.trim() ? responderName.trim() : 'Pôle Technique Centrale Tech';
+
+  const statusLabels: Record<string, { label: string; color: string; bg: string }> = {
+    open: { label: 'Signalement Reçu & Ouvert', color: '#009881', bg: '#e6f7f4' },
+    investigating: { label: 'En Cours d\'Investigation', color: '#c28b49', bg: '#fef7ea' },
+    resolved: { label: 'Résolu & Traité', color: '#126a38', bg: '#eaf4ee' },
+    closed: { label: 'Clôturé', color: '#4c5362', bg: '#f1f2f4' },
+  };
+
+  const statusInfo = statusLabels[issue.status] || { label: issue.status, color: '#009881', bg: '#e6f7f4' };
+
+  const machineDetails = issue.machine_info?.machineNumber
+    ? `${issue.machine_info.machineNumber} (${issue.machine_info.room || 'Lavoir ECC'})`
+    : issue.machine_info?.room || 'Non spécifié';
+
+  const platformSummary = `${issue.platform.device || 'Appareil'} • ${issue.platform.browser || 'Navigateur'}${
+    issue.platform.osVersion ? ` (${issue.platform.osVersion})` : ''
+  }`;
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+      <meta charset="utf-8">
+      <title>Centrale Tech — laundry.fecc.ma</title>
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #272727;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f6f8; padding: 24px 12px;">
+        <tr>
+          <td align="center">
+            <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 620px; background-color: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid #e1e7ec;">
+              
+              <!-- Header Centrale Tech -->
+              <tr>
+                <td style="background: linear-gradient(135deg, #0c3d40 0%, #073f49 100%); padding: 28px 24px; text-align: center; border-bottom: 3px solid #009881;">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td align="center">
+                        <div style="display: inline-block; background-color: #009881; color: #ffffff; width: 44px; height: 44px; line-height: 44px; border-radius: 10px; font-weight: 800; font-size: 20px; text-align: center; margin-bottom: 10px;">
+                          CT
+                        </div>
+                        <h1 style="color: #ffffff; font-size: 20px; font-weight: 800; margin: 0; letter-spacing: 0.5px; text-transform: uppercase;">
+                          CENTRALE TECH
+                        </h1>
+                        <p style="color: #abd1f9; font-size: 12px; margin: 4px 0 0 0; letter-spacing: 0.3px;">
+                          École Centrale Casablanca • Pôle Support laundry.fecc.ma
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <!-- Status Notification Banner -->
+              <tr>
+                <td style="padding: 24px 28px 12px 28px;">
+                  <div style="display: inline-block; background-color: ${statusInfo.bg}; color: ${statusInfo.color}; border: 1px solid ${statusInfo.color}; font-size: 12px; font-weight: 700; text-transform: uppercase; padding: 6px 14px; border-radius: 20px; margin-bottom: 16px;">
+                    Statut : ${statusInfo.label}
+                  </div>
+                  <h2 style="font-size: 18px; color: #0c3d40; margin: 0 0 8px 0; font-weight: 700;">
+                    Bonjour ${displayName},
+                  </h2>
+                  <p style="font-size: 14px; line-height: 1.6; color: #4c5362; margin: 0;">
+                    Votre signalement concernant le service de la laverie <strong>laundry.fecc.ma</strong> a été mis à jour par l'équipe technique Centrale Tech.
+                  </p>
+                </td>
+              </tr>
+
+              <!-- Issue Card Details -->
+              <tr>
+                <td style="padding: 12px 28px;">
+                  <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px;">
+                    <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 12px;">
+                      <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #009881; letter-spacing: 0.5px;">Titre de l'incident</span>
+                      <h3 style="font-size: 15px; color: #0c3d40; margin: 4px 0 0 0; font-weight: 600;">
+                        ${issue.title}
+                      </h3>
+                    </div>
+
+                    <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 13px; color: #4c5362; line-height: 1.8;">
+                      <tr>
+                        <td width="35%" style="font-weight: 600;">Catégorie :</td>
+                        <td>${issue.category}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-weight: 600;">Machine / Salle :</td>
+                        <td>${machineDetails}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-weight: 600;">Environnement :</td>
+                        <td>${platformSummary}</td>
+                      </tr>
+                    </table>
+
+                    <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed #cbd5e1; font-size: 13px; color: #334155;">
+                      <strong>Description initiale :</strong>
+                      <p style="margin: 4px 0 0 0; font-style: italic; color: #475569;">"${issue.description}"</p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Resolution / Notes Section -->
+              ${
+                adminNotes
+                  ? `
+              <tr>
+                <td style="padding: 12px 28px 24px 28px;">
+                  <div style="background-color: #e6f7f4; border-left: 4px solid #009881; border-radius: 8px; padding: 16px 20px;">
+                    <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #126a38; letter-spacing: 0.5px; margin-bottom: 6px;">
+                      Réponse & Intervention de l'équipe :
+                    </div>
+                    <p style="font-size: 14px; line-height: 1.6; color: #0c3d40; margin: 0; font-weight: 500; white-space: pre-line;">
+                      ${adminNotes}
+                    </p>
+                    <div style="font-size: 11px; color: #048471; margin-top: 8px; font-weight: 600;">
+                      — ${responder}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              `
+                  : ''
+              }
+
+              <!-- Direct Link to Portal -->
+              <tr>
+                <td style="padding: 0 28px 28px 28px; text-align: center;">
+                  <a href="https://laundry.fecc.ma" target="_blank" style="display: inline-block; background-color: #009881; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Accéder à laundry.fecc.ma
+                  </a>
+                </td>
+              </tr>
+
+              <!-- Footer -->
+              <tr>
+                <td style="background-color: #f1f5f9; padding: 18px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b; line-height: 1.5;">
+                  <p style="margin: 0;">
+                    Ce message a été envoyé automatiquement par le portail de suivi <strong>Centrale Tech</strong>.
+                  </p>
+                  <p style="margin: 4px 0 0 0;">
+                    Club Centrale Tech • École Centrale Casablanca, Ville Verte Côté Bouskoura.
+                  </p>
+                </td>
+              </tr>
+
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"Centrale Tech (laundry.fecc.ma Support)" <${user}>`,
+      to: issue.author_email,
+      replyTo,
+      subject: `[Centrale Tech] Mise à jour de votre signalement laundry.fecc.ma : ${issue.title}`,
+      text: `Bonjour ${displayName},\n\nVotre signalement concernant laundry.fecc.ma a été mis à jour.\nStatut: ${statusInfo.label}\n\nTitre: ${issue.title}\nMachine: ${machineDetails}\n\nRéponse de l'équipe:\n${adminNotes || 'En cours de traitement'}\n\n— ${responder}\nCentrale Tech • École Centrale Casablanca`,
+      html: htmlContent,
+    });
+
+    console.log('Issue notification email sent successfully:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Failed to dispatch issue notification email via Gmail SMTP:', error);
+    return { success: false, error };
+  }
+}
+
+// Backward compatibility alias for any existing question routes
 export async function sendAnswerNotificationEmail({
   recipientEmail,
   recipientName,
@@ -29,58 +218,24 @@ export async function sendAnswerNotificationEmail({
   answerText: string;
   answeredBy: string;
 }) {
-  if (!recipientEmail || !recipientEmail.includes('@')) {
-    console.warn('Invalid or missing recipient email for notification:', recipientEmail);
-    return { success: false, reason: 'Invalid email' };
-  }
+  const dummyIssue: LaundryIssue = {
+    id: 'legacy',
+    title: questionText.substring(0, 60),
+    description: questionText,
+    category: 'Other',
+    severity: 'medium',
+    platform: { device: 'Other', browser: 'Other' },
+    author_name: recipientName,
+    author_email: recipientEmail,
+    status: 'resolved',
+    admin_notes: answerText,
+    resolved_by: answeredBy,
+    created_at: new Date().toISOString(),
+  };
 
-  const displayName = recipientName?.trim() ? recipientName.trim() : 'JECC Community Member';
-
-  const htmlContent = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background-color: #0f172a; color: #f8fafc; border-radius: 16px; border: 1px solid #1e293b;">
-      <div style="text-align: center; margin-bottom: 24px;">
-        <div style="display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; width: 44px; height: 44px; line-height: 44px; border-radius: 12px; font-weight: bold; font-size: 20px; text-align: center;">J</div>
-        <h2 style="color: #ffffff; margin-top: 12px; font-size: 22px; font-weight: bold;">JECC Question Portal</h2>
-        <p style="color: #94a3b8; font-size: 13px; margin: 0;">Junior Entreprise Centrale Casablanca</p>
-      </div>
-
-      <div style="background-color: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-        <p style="margin-top: 0; color: #cbd5e1; font-size: 14px;">Hello <strong>${displayName}</strong>,</p>
-        <p style="color: #e2e8f0; font-size: 14px; line-height: 1.5;">Your question has just been answered by <strong>${answeredBy}</strong>!</p>
-        
-        <div style="margin: 16px 0; padding: 14px; background-color: #0f172a; border-left: 4px solid #6366f1; border-radius: 6px;">
-          <p style="font-size: 11px; text-transform: uppercase; color: #818cf8; font-weight: 600; margin: 0 0 6px 0;">Your Question:</p>
-          <p style="margin: 0; font-size: 14px; color: #f1f5f9; font-style: italic;">"${questionText}"</p>
-        </div>
-
-        <div style="margin: 16px 0; padding: 14px; background-color: #0f172a; border-left: 4px solid #10b981; border-radius: 6px;">
-          <p style="font-size: 11px; text-transform: uppercase; color: #34d399; font-weight: 600; margin: 0 0 6px 0;">Official Answer from ${answeredBy}:</p>
-          <p style="margin: 0; font-size: 14px; color: #f1f5f9; white-space: pre-line; line-height: 1.6;">${answerText}</p>
-        </div>
-      </div>
-
-      <div style="text-align: center; border-top: 1px solid #1e293b; padding-top: 16px;">
-        <p style="color: #64748b; font-size: 12px; margin: 0;">
-          This email was automatically sent by the JECC Q&A notification service.
-        </p>
-      </div>
-    </div>
-  `;
-
-  try {
-    const info = await transporter.sendMail({
-      from: `"JECC Portal" <${user}>`,
-      to: recipientEmail,
-      replyTo,
-      subject: `[JECC Response] Your question has been answered!`,
-      text: `Hello ${displayName},\n\nYour question: "${questionText}"\n\nOfficial Answer from ${answeredBy}:\n${answerText}\n\nJunior Entreprise Centrale Casablanca`,
-      html: htmlContent,
-    });
-
-    console.log('Answer notification email sent successfully:', info.messageId);
-    return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error('Failed to dispatch notification email via Gmail SMTP:', error);
-    return { success: false, error };
-  }
+  return sendIssueStatusUpdateEmail({
+    issue: dummyIssue,
+    adminNotes: answerText,
+    responderName: answeredBy,
+  });
 }
